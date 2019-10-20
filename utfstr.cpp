@@ -1,9 +1,9 @@
-#ifndef UTF16_CPP
-#define UTF16_CPP
+#ifndef UTFSTR_CPP
+#define UTFSTR_CPP
 
-#include "utf16.h"
+#include "utfstr.hpp"
 
-unsigned char utf16::state_map[7][256] = {
+unsigned char utfstr::state_map[7][256] = {
 	{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 	,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
@@ -77,7 +77,7 @@ unsigned char utf16::state_map[7][256] = {
 // 	}
 // }
 
-long long unsigned utf16::utf8_length(const char* src) {
+long long unsigned utfstr::length(const char* src) {
 	long int length = 0;
 	unsigned char byte, state = 1, last;
 	for (;;) {
@@ -90,8 +90,19 @@ long long unsigned utf16::utf8_length(const char* src) {
 	return (src[-1] || last != 1)? -1: length;
 }
 
-wchar_t* utf16::parse_utf8(wchar_t dst[], const char* src) {
-	wchar_t* ptr = dst;
+long long unsigned utfstr::length(const char16_t* src) {
+	if (sizeof(char16_t) == sizeof(wchar_t)) {
+		return wcslen((const wchar_t*) src);
+	}
+	const char16_t* ptr = src;
+	while (*ptr) {
+		++ptr;
+	}
+	return ptr - src;
+}
+
+char16_t* utfstr::copy(char16_t* dst, const char* src) {
+	char16_t* ptr = dst;
 	unsigned char byte, state = 1, last;
 	unsigned long int buffer;
 	for (;;) {
@@ -131,6 +142,93 @@ wchar_t* utf16::parse_utf8(wchar_t dst[], const char* src) {
 		return nullptr;
 	}
 	return dst;
+}
+
+char* utfstr::copy(char* dst, const char16_t* src) {
+	char* ptr = dst;
+	unsigned short chr;
+	while ((chr = *src++)) {
+		if (chr < (1 << 7)) {
+			*ptr++ = chr;
+			continue;
+		}
+		if (chr < (1 << 11)) {
+			ptr[1] = 0b10000000 | chr & 0b00111111;
+			ptr[0] = 0b11000000 | (chr >> 6) & 0b00011111;
+			ptr += 2;
+			continue;
+		}
+		ptr[2] = 0b10000000 | chr & 0b00111111;
+		ptr[1] = 0b10000000 | (chr >> 6) & 0b00111111;
+		ptr[0] = 0b11100000 | (chr >> 12) & 0b00001111;
+		ptr += 3;
+	}
+	*ptr = 0;
+	return dst;
+}
+
+char16_t* utfstr::copy(char16_t* dst, const wchar_t* src) {
+	if (sizeof(char16_t) == sizeof(wchar_t)) {
+		wcscpy((wchar_t*)dst, src);
+		return dst;
+	}
+	char16_t* ptr = dst;
+	while (*src) *ptr++ = (char16_t) *src++;
+	*ptr = '\0';
+	return dst;
+}
+
+wchar_t* utfstr::copy(wchar_t* dst, const char16_t* src) {
+	if (sizeof(char16_t) == sizeof(wchar_t)) {
+		wcscpy(dst, (const wchar_t*)src);
+		return dst;
+	}
+	wchar_t* ptr = dst;
+	while (*src) *ptr++ = (wchar_t) *src++;
+	*ptr = '\0';
+	return dst;
+}
+
+void utfstr::print(const char16_t* src) {
+	if (sizeof(char16_t) == sizeof(wchar_t)) {
+		printf("%ls", (const wchar_t*) src);
+		return;
+	}
+	while (*src) {
+		printf("%lc", (wchar_t) *src++);
+	}
+}
+
+void utfstr::puts(const char16_t* src) {
+	if (sizeof(char16_t) == sizeof(wchar_t)) {
+		printf("%ls\n", (const wchar_t*) src);
+		return;
+	}
+	while (*src) {
+		printf("%lc", (wchar_t) *src++);
+	}
+	putchar('\n');
+}
+
+void utfstr::print(FILE* file, const char16_t* src) {
+	if (sizeof(char16_t) == sizeof(wchar_t)) {
+		fprintf(file, "%ls", (const wchar_t*) src);
+		return;
+	}
+	while (*src) {
+		fprintf(file, "%lc", (wchar_t) *src++);
+	}
+}
+
+void utfstr::puts(FILE* file, const char16_t* src) {
+	if (sizeof(char16_t) == sizeof(wchar_t)) {
+		fprintf(file, "%ls\n", (const wchar_t*) src);
+		return;
+	}
+	while (*src) {
+		fprintf(file, "%lc", (wchar_t) *src++);
+	}
+	fputc('\n', file);
 }
 
 #endif

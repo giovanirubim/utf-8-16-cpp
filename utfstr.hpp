@@ -5,6 +5,8 @@
 #include <cwchar>
 #include <cstring>
 
+#include <string>
+
 class utfstr {
 private:
 
@@ -19,6 +21,8 @@ public:
 	static char*     copy(char*     dst, const char16_t* src);
 	static char16_t* copy(char16_t* dst, const wchar_t*  src);
 	static wchar_t*  copy(wchar_t*  dst, const char16_t* src);
+	
+	static bool copy(std::u16string &dst, const char* src);
 
 	static void print(const char16_t* src);
 	static void  puts(const char16_t* src);

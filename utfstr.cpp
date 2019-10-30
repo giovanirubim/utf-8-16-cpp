@@ -189,6 +189,48 @@ wchar_t* utfstr::copy(wchar_t* dst, const char16_t* src) {
 	return dst;
 }
 
+bool utfstr::copy(std::u16string &dst, const char* src) {
+	dst = std::u16string();
+	unsigned char byte, state = 1, last;
+	unsigned long int buffer;
+	for (;;) {
+		byte = *src++;
+		last = state;
+		state = state_map[state][byte];
+		if (!state) break;
+		switch (state) {
+			case 1:
+				if (last == 1) {
+					dst += (char16_t) byte;
+				} else {
+					buffer <<= 6;
+					buffer |= byte & 0b00111111;
+					dst += (char16_t) buffer;
+				}
+			break;
+			case 2:
+			case 3:
+				buffer <<= 6;
+				buffer |= byte & 0b00111111;
+			break;
+			case 4:
+				buffer = byte & 0b00011111;
+			break;
+			case 5:
+				buffer = byte & 0b00001111;
+			break;
+			case 6:
+				buffer = byte & 0b00000111;
+			break;
+		}
+	}
+	if (src[-1] || last != 1) {
+		dst = std::u16string();
+		return false;
+	}
+	return true;
+}
+
 void utfstr::print(const char16_t* src) {
 	if (sizeof(char16_t) == sizeof(wchar_t)) {
 		printf("%ls", (const wchar_t*) src);

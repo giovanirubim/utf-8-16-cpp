@@ -1,21 +1,17 @@
 #include "utfstr.hpp"
 #include <cstring>
+#include <iostream>
 #include <cstdio>
 #include <locale>
 #include <cwchar>
-#include <cuchar>
 
 int main() {
 
 	setlocale(LC_ALL, "");
-	
-	char16_t s16[] = {0xcccc, 0};
-	char s8[100];
-	wchar_t ws[100];
+		
+	char utf8str[] = {109, 97, (char)195, (char)167, (char)195, (char)163, 0};
+	std::u16string str;
+	utfstr::copy(str, utf8str);
+	printf("[%ls]\n", str.c_str());
 
-	utfstr::puts(s16);
-
-	utfstr::copy(ws, s16);
-	printf("%ls\n", ws);
-	
 }
